@@ -2,13 +2,18 @@
 require_once './ParallelUpload.php';
 // session_start();
 // session_destroy();
-$Upload = new ParallelUpload([]);
-
-if(isset($_GET['init'])){
-    $Upload->parts(1)->dd();
-}
 
 if(isset($_GET['upload'])){
-    var_dump($_FILES);
-    // $Upload->upload(1, file_get_contents($_FILES["file"]["tmp_name"]))->dd();
+    $Upload = new ParallelUpload([]);
+    $Upload
+    ->parts(1)
+    ->upload(1, file_get_contents($_FILES["file"]["tmp_name"]), $_FILES["file"]["name"])
+    ->dd();
+
+    if($Upload->done()){
+        echo "upload done <br>";
+        echo $Upload->merge('example.png');
+    }else{
+        echo "still in progress";
+    }
 }
