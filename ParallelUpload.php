@@ -36,8 +36,11 @@ class ParallelUpload {
         return $this;
     }
 
-    public function upload(int $partNr, $fileContent): ParallelUpload{
+    public function upload(int $partNr, $fileContent, string $originalName = "unknown_file.data"): ParallelUpload{
+        $this->exists_session();
         $session = $this->get_session();
+        $session->originalName = $originalName;
+        $session->done = (array)$session->done;
         $this->save_part($partNr, $fileContent);
         $session->done[$partNr] = time();
         $this->debug['session'] = $session;
@@ -45,16 +48,30 @@ class ParallelUpload {
         return $this;
     }
 
-    public function done(int $partNr, $fileContent): bool{
+    public function done(): bool{
+        $this->exists_session();
         $session = $this->get_session();
-        for($i = 0; $i < $session->parts; $i++){
-            if(!($session->done[$i] ?? false)){
+        $session->done = (array)$session->done;
+        for($i = 1; $i <= $session->parts; $i++){
+            if(!isset($session->done[$i])){
                 return false;
             }
         }
         $session->end = time();
         $this->set_session($session);
         return true;
+    }
+
+    public function merge(string $destination){
+        $this->exists_session();
+        $session = $this->get_session();
+        if($session->end){
+            for($i = 1; $i <= $session->parts; $i++){
+                file_put_contents($destination, $this->get_part($i, true) , FILE_APPEND | LOCK_EX);
+            }
+        }
+        $this->destroy_session();
+        return $destination;
     }
 
     public function tmpFolder(string $tmpFolder, int  $permission = 0777): ParallelUpload {
@@ -88,8 +105,11 @@ class ParallelUpload {
         file_put_contents($this->tmpFolder.'/'.$this->sessionKey.'_'.$part.'.part', $data);
     }
 
-    protected function get_part(int $part) {
-        return file_get_contents($this->tmpFolder.'/'.$this->sessionKey.'_'.$part.'.part');
+    protected function get_part(int $part, bool $del) {
+        $file = $this->tmpFolder.'/'.$this->sessionKey.'_'.$part.'.part';
+        $data = file_get_contents($file);
+        if($del) unlink($file);
+        return $data;
     }
 
 
@@ -123,7 +143,7 @@ class ParallelUpload {
     }
 
     protected function get_session(): object {
-        $data = json_decode(file_get_contents($this->tmpFolder.'/'.$this->sessionKey));
+        $data = @json_decode(file_get_contents($this->tmpFolder.'/'.$this->sessionKey));
         if(gettype($data) !== 'object'){
             $this->reset_session();
             return $this->get_session();
@@ -135,10 +155,15 @@ class ParallelUpload {
         file_put_contents($this->tmpFolder.'/'.$this->sessionKey, json_encode($data));
     }
 
+    protected function rm_session(): void {
+        unlink($this->tmpFolder.'/'.$this->sessionKey);
+    }
+
     protected function reset_session(): void {
         $this->set_session([
             'parts' => $this->parts,
             'done' => [],
+            'originalName' => null,
             'tmpFolderPermission' => $this->tmpFolderPermission,
             'tmpFolder' => $this->tmpFolder,
             'start' => time(),
@@ -178,6 +203,7 @@ class ParallelUpload {
             $_SESSION[$this->phpSessionKey] = $newSession;
         }
         
+        $this->rm_session();
         $this->sessionKey = $_SESSION[$this->phpSessionKey];
     }
 
