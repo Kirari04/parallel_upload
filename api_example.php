@@ -3,11 +3,20 @@ require_once './ParallelUpload.php';
 // session_start();
 // session_destroy();
 
-if(isset($_GET['upload'])){
+if(
+    isset($_GET['upload']) &&
+    isset($_FILES["file"]) &&
+    filesize($_FILES["file"]["tmp_name"] > 0) &&
+    isset($_POST["parts"]) &&
+    is_numeric($_POST["parts"]) &&
+    $_POST["parts"] > 1 &&
+    isset($_POST["part"]) &&
+    is_numeric($_POST["part"]) &&
+    $_POST["part"] >= 1 ){
     $Upload = new ParallelUpload([]);
     $Upload
-    ->parts(1)
-    ->upload(1, file_get_contents($_FILES["file"]["tmp_name"]), $_FILES["file"]["name"])
+    ->parts($_GET["parts"])
+    ->upload($_GET["part"], file_get_contents($_FILES["file"]["tmp_name"]), $_FILES["file"]["name"])
     ->dd();
 
     if($Upload->done()){
@@ -16,4 +25,6 @@ if(isset($_GET['upload'])){
     }else{
         echo "still in progress";
     }
+}else{
+    echo "No match";
 }

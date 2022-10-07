@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="ParallelUpload.js"></script>
+</head>
+<body>
+    <div>
+        <input type="file" name="file" id="file">
+    </div>
+    <div>
+        <progress min="0" max="100" value="0"></progress>
+    </div>
+    <div>
+        <button>Upload</button>
+    </div>
+    <script>
+        document.querySelector('button').addEventListener('click', () => {
+            new ParallelUpload(
+                document.querySelector('#file').files[0]
+            )
+            .api("http://localhost:3000/api_example.php?upload")
+            .upload();
+        });
+    </script>
+</body>
+</html>
