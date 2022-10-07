@@ -22,7 +22,8 @@
             new ParallelUpload(
                 document.querySelector('#file').files[0]
             )
-            .api("http://localhost:3000/api_example.php?upload")
+            .api("http://localhost/api_example.php?upload")
+            .progressbar(document.querySelector('progress'))
             .upload();
         });
     </script>

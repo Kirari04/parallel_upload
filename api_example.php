@@ -6,7 +6,7 @@ require_once './ParallelUpload.php';
 if(
     isset($_GET['upload']) &&
     isset($_FILES["file"]) &&
-    filesize($_FILES["file"]["tmp_name"] > 0) &&
+    filesize($_FILES["file"]["tmp_name"]) > 0 &&
     isset($_POST["parts"]) &&
     is_numeric($_POST["parts"]) &&
     $_POST["parts"] > 1 &&
@@ -15,13 +15,13 @@ if(
     $_POST["part"] >= 1 ){
     $Upload = new ParallelUpload([]);
     $Upload
-    ->parts($_GET["parts"])
-    ->upload($_GET["part"], file_get_contents($_FILES["file"]["tmp_name"]), $_FILES["file"]["name"])
+    ->parts($_POST["parts"])
+    ->upload($_POST["part"], file_get_contents($_FILES["file"]["tmp_name"]), $_FILES["file"]["name"])
     ->dd();
 
     if($Upload->done()){
         echo "upload done <br>";
-        echo $Upload->merge('example.png');
+        echo $Upload->merge('./fin/'.$_FILES["file"]["name"]);
     }else{
         echo "still in progress";
     }
